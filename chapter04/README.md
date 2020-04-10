@@ -92,9 +92,11 @@ class Promise {
 }
 ```
 
-接下来再介绍一下 Promise 中静态方法的实现，譬如 Promise.resolve、Promise.reject。其它静态方法的实现也是类似的。
+接下来再介绍一下 Promise 中静态方法的实现，譬如 Promise.resolve、Promise.reject、Promise.all。其它静态方法的实现也是类似的。
 
 ## 静态方法
+
+### Promise.resolve && Promise.reject
 
 除了前文中提到的 Promise 实例的原型方法外，Promise 还提供了 Promise.resolve 和 Promise.reject 方法。用于将非 Promise 实例包装为 Promise 实例。例如：
 
@@ -196,9 +198,100 @@ Promise.resolve 方法允许调用时不带参数，直接返回一个 resolved 
   }
 ```
 
-[Promise 的实现源码](https://repl.it/@morrain2016/Promise)
-
 **Promise.reject 与 Promise.resolve 类似，区别在于 Promise.reject 始终返回一个状态的 rejected 的 Promise 实例，而 Promise.resolve 的参数如果是一个 Promise 实例的话，返回的是参数对应的 Promise 实例，所以状态不一定。**
+
+```js
+  static reject(value) {
+    if (value && typeof value === 'object' && typeof value.then === 'function') {
+      let then = value.then;
+      return new Promise((resolve, reject) => {
+        then(reject);
+      });
+    } else {
+      return new Promise((resolve, reject) => reject(value));
+    }
+  }
+```
+
+
+[Promise.reject 的实现源码](https://repl.it/@morrain2016/Promise)
+
+### Promise.all && Promise.race
+
+Promise.all 接收一个 Promise 实例的数组，在所有这些 Promise 的实例都 fulfilled 后，按照 Promise 实例的顺序返回相应结果的数组。
+
+```js
+const p1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('p1'), 1000)
+})
+
+const p2 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('p2'), 5000)
+})
+
+Promise.all([p1, p2]).then(rets => {
+   console.log(rets) // ['p1','p2']
+})
+```
+
+Promise.all 的实现如下：
+
+```js
+  static all(promises) {
+    return new Promise((resolve, reject) => {
+      let fulfilledCount = 0
+      const itemNum = promises.length
+      const rets = Array.from({ length: itemNum })`
+      promises.forEach((promise, index) => {
+        Promise.resolve(promise).then(result => {
+          fulfilledCount++;
+          rets[index] = result;
+          if (fulfilledCount === itemNum) {
+            resolve(rets);
+          }
+        }, reason => reject(reason));
+      })
+
+    })
+  }
+```
+
+[Promise.all 的实现源码](https://repl.it/@morrain2016/Promise)
+
+Promise.race 也接收一个 Promise 实例的数组，与 Promise.all不同的是，所以返回的结果是这些 Promise 实例中最先 fulfilled 的。
+
+```js
+const p1 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('p1'), 1000)
+})
+
+const p2 = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('p2'), 5000)
+})
+
+Promise.race([p1, p2]).then(ret => {
+   console.log(ret) // 'p1'
+})
+```
+
+Promise.race 的实现如下：
+
+```js
+  static race(promises) {
+    return new Promise(function (resolve, reject) {
+      for (let i = 0; i < promises.length; i++) {
+        Promise.resolve(promises[i]).then(function (value) {
+          return resolve(value)
+        }, function (reason) {
+          return reject(reason)
+        })
+      }
+    })
+  }
+```
+
+[Promise.race 的实现源码](https://repl.it/@morrain2016/Promise)
+
 
 ## 总结
 
@@ -208,6 +301,8 @@ Promise.resolve 方法允许调用时不带参数，直接返回一个 resolved 
 
 1. 通过 Promise.prototype.then 和 Promise.prototype.catch 方法将观察者方法注册到被观察者 Promise 对象中，同时返回一个新的 Promise 对象，以便可以链式调用。
 2. 被观察者管理内部 pending、fulfilled 和 rejected 的状态转变，同时通过构造函数中传递的 resolve 和 reject 方法以主动触发状态转变和通知观察者。
+
+**本系列图文讲解的是 Promise 的思想，实现的内容并不能完全满足 Promise/A+ 规范的所有要求**
 
 
 ## 参考资料
