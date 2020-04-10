@@ -241,7 +241,7 @@ Promise.all 的实现如下：
     return new Promise((resolve, reject) => {
       let fulfilledCount = 0
       const itemNum = promises.length
-      const rets = Array.from({ length: itemNum })`
+      const rets = Array.from({ length: itemNum })
       promises.forEach((promise, index) => {
         Promise.resolve(promise).then(result => {
           fulfilledCount++;
