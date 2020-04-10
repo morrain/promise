@@ -92,7 +92,7 @@ class Promise {
 }
 ```
 
-接下来再介绍一下 Promise 中静态方法的实现，譬如 Promise.resolve、Promise.reject、Promise.all。其它静态方法的实现也是类似的。
+接下来再介绍一下 Promise 中静态方法的实现，譬如 Promise.resolve、Promise.reject、Promise.all 和 Promise.race。其它静态方法的实现也是类似的。
 
 ## 静态方法
 
